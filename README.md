@@ -14,10 +14,8 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 - **react-native**: v0.79.2
 
 ## Installation and starting
-    In MyApp folder:
-    ```sh
-   npm install
-   ```sh
+    In MyApp folder:  
+   npm install  
    npx react-native run-android
 
 
