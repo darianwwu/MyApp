@@ -2,6 +2,27 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 # Getting Started
 
+## Needed version:
+
+- **Node.js**: v22.12.0
+- **npm**: v10.9.0
+- **React Native CLI**: v18.0.0
+- **Java**: OpenJDK 19.0.2
+- **Gradle**: Gradle 8.13
+- **Android Studio**: Android Studio Ladybug Feature Drop | 2024.2.2
+- **react-native-vision-camera**: v4.6.4
+- **react-native**: v0.79.2
+
+## Installation and starting
+    In MyApp folder:
+   npm install
+   npx react-native run-android
+
+
+
+
+
+
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
 ## Step 1: Start Metro

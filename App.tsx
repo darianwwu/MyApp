@@ -1,131 +1,136 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  PermissionsAndroid,
+  Dimensions,
 } from 'react-native';
-
 import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  Camera,
+  useCameraDevices,
+  CameraPermissionStatus,
+} from 'react-native-vision-camera';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [hasPermission, setHasPermission] = useState(false);
+  const devices = useCameraDevices();             // devices ist KEIN Array, sondern ein Objekt
+  const device = devices.back;                    // jetzt korrekt: devices.back oder devices.front
+
+  // 1) Splash-Timer: nach 3s zum Kamera-Screen wechseln
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 2) Berechtigungen anfragen
+  useEffect(() => {
+    const setupPermissions = async () => {
+      // 2a) Android Runtime-Permission
+      if (Platform.OS === 'android') {
+        const camPerm = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA
+        );
+        if (camPerm !== PermissionsAndroid.RESULTS.GRANTED) {
+          setHasPermission(false);
+          return;
+        }
+      }
+      // 2b) Vision-Camera Permission-API
+      //   erst Status auslesen, dann nur bei Bedarf neu anfragen
+      let status: CameraPermissionStatus = await Camera.getCameraPermissionStatus();
+      if (status !== 'authorized') {
+        status = await Camera.requestCameraPermission();
+      }
+      setHasPermission(status === 'authorized');
+    };
+
+    setupPermissions();
+  }, []);
+
+  // 3) Render-Logik
+  if (showSplash) {
+    return (
+      <View style={styles.splashContainer}>
+        <Image source={require('./assets/logo.png')} style={styles.logo} />
+      </View>
+    );
+  }
+
+  if (!device || !hasPermission) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>
+          Keine Kamera gefunden oder Berechtigung verweigert.
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
-
-  return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <View style={styles.cameraContainer}>
+      <Camera
+        style={StyleSheet.absoluteFill}
+        device={device}
+        isActive={true}
       />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+      <TouchableOpacity
+        style={styles.shutterButton}
+        onPress={() => console.log('Shutter gedrückt')}
+      >
+        <View style={styles.innerCircle} />
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  logo: {
+    width: 220,
+    height: 220,
+    resizeMode: 'contain',
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  centerContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  highlight: {
-    fontWeight: '700',
+  errorText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  shutterButton: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  innerCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#ddd',
   },
 });
-
-export default App;
